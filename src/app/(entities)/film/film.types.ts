@@ -1,3 +1,10 @@
+export type IFilmResponse = {
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: IFilm[];
+};
+
 export type IFilm = {
     title: string;
     episode_id: number;
@@ -13,11 +20,4 @@ export type IFilm = {
     created: string;
     edited: string;
     url: string;
-};
-
-export type IFilmResponse = {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: IFilm[];
 };
