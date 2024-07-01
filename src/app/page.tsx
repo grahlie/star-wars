@@ -1,21 +1,21 @@
-import {env} from '../env.js';
-import {Film, type IFilm, type IFilmResponse } from '~/app/(entities)/film';
-import CardItem from "~/app/(components)/card";
-
-async function getData(): Promise<IFilm[]> {
-  const res = await fetch(`${env.API_URL}/films/`)
-
-  if (!res.ok) {
-    throw new Error('Failed to fetch data')
-  }
-
-  const data: IFilmResponse = await res.json() as IFilmResponse;
-
-  return data.results.map((item) => new Film(item));
-}
+import { type IFilm } from '~/app/(entities)/film';
+import Link from 'next/link.js';
+import { fetchAllMovies } from '~/app/(services)/movie';
 
 export default async function HomePage() {
-  const data: IFilm[] = await getData();
+  const data: IFilm[] = await fetchAllMovies();
+
+  const parseUrl = (title: string, url: string) => {
+    const slug = title
+      .trim()
+      .toLowerCase()
+      .replace(/[\W_]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    const id = url.match(/\/(\d+)\/?$/) as unknown as string;
+
+    return `${slug}_${id[1]}`;
+  };
 
   return (
       <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
@@ -26,7 +26,23 @@ export default async function HomePage() {
           {data
             .sort((first, second) => first.episode_id - second.episode_id)
             .map((item: IFilm, index: number) => (
-              <CardItem key={index} {...item} />
+              <div key={index} className="max-w-sm rounded overflow-hidden shadow-lg">
+                  <div className="px-6 py-4">
+                      <div>
+                          <p className="font-bold text-xl mb-2">
+                              <Link href={`/movie/${parseUrl(item.title, item.url)}`}>
+                                  {item.title} - E{item.episode_id}
+                              </Link>
+                          </p>
+                          <p className="text-italic text-xs font-light mb-4">
+                            {item.producer} - {item.release_date}
+                          </p>
+                      </div>
+                      <p className="text-gray-700 text-base">
+                          {item.opening_crawl}
+                      </p>
+                  </div>
+              </div>
             ))
           }
         </div>
