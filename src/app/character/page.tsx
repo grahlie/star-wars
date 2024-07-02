@@ -1,8 +1,21 @@
-import { type ICharacter } from '~/app/(entities)/character';
+import Link from 'next/link.js';
+import type { ICharacter } from '~/app/(entities)/character';
 import { fetchAllCharacters } from '~/app/(services)/character';
 
-export default async function CharacterPage() {
+export default async function CharactersPage() {
     const data: ICharacter[] = await fetchAllCharacters();
+
+    const parseUrl = (title: string, url: string) => {
+      const slug = title
+        .trim()
+        .toLowerCase()
+        .replace(/[\W_]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+      const id = url.match(/\/(\d+)\/?$/) as unknown as string;
+
+      return `${slug}_${id[1]}`;
+    };
 
     return (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
@@ -12,7 +25,9 @@ export default async function CharacterPage() {
                   <div className="px-6 py-4">
                       <div>
                           <p className="font-bold text-xl mb-2">
-                            {item.name}
+                              <Link href={`/character/${parseUrl(item.name, item.url)}`}>
+                                {item.name}
+                              </Link>
                           </p>
                           <p className="text-italic text-xs font-light mb-4">
                             {item.birth_year} - {item.gender}

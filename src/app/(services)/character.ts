@@ -1,17 +1,58 @@
-import Cookies from 'js-cookie';
+import { cookies } from 'next/headers';
 import { env } from "~/env";
-import { Character, type ICharacter, type ICharacterResponse } from "../(entities)/character";
+import { type ICharacter } from "../(entities)/character";
 
 export const fetchAllCharacters = async (): Promise<ICharacter[]> => {
-    const characters = Cookies.get('characters');
-    console.log(characters);
-    const res = await fetch(`${env.API_URL}/people/`)
+  const cookieStore = cookies();
+  const characterList = cookieStore.get('characters')?.value;
+  const characters: ICharacter[] = [];
+  const uniqueIds = new Set<string>();
 
-    if (!res.ok) {
-      throw new Error('Failed to fetch data')
-    }
+  if (!characterList) {
+    return characters;
+  }
 
-    const data: ICharacterResponse = await res.json() as ICharacterResponse;
+  const clickedMoviesUrls: string[] = JSON.parse(characterList) as string[];
 
-    return data.results.map((item) => new Character(item));
+  await Promise.all(
+    Object.values(clickedMoviesUrls)
+      .filter((url: string) => {
+        const id: string = url.split('/').slice(-2, -1)[0]!;
+        if (!uniqueIds.has(id)) {
+          uniqueIds.add(id);
+          return true;
+        }
+        return false;
+      })
+      .map(async (url: string) => {
+        try {
+          const res = await fetch(url);
+
+          if (!res.ok) {
+            throw new Error(`Failed to fetch character from ${url}`);
+          }
+
+          const character: ICharacter = await res.json() as ICharacter;
+
+          characters.push(character);
+        } catch (error) {
+          const errorMessage = typeof error === 'string' ? error : (error as Error).message;
+          console.error(`Error fetching character: ${errorMessage}`);
+        }
+      })
+  );
+
+  return characters;
+}
+
+export const fetchOneCharacter = async (id: string): Promise<ICharacter> => {
+  const res = await fetch(`${env.API_URL}/people/${id}/`)
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+
+  const data: ICharacter = await res.json() as ICharacter;
+
+  return data;
 }
